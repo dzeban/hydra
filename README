@@ -1,0 +1,15 @@
+"Hydra" -- research operating system
+====================================
+
+config.sh  - export env variables for later use of other scripts
+headers.sh - install headers in sysroot/include
+build.sh   - build each project (kernel and libc)
+clean.sh   - clean each project (kernel and libc) remove binaries and build dirs
+
+iso.sh     - create iso image with kernel
+qemu.sh    - runs qemu system with iso
+bochs.sh   - runs bochs emulator with iso
+
+default-host.sh - echoes 'i686-elf'
+target-triplet-to-arch.sh - convert "i686-elf" to "i386"
+
