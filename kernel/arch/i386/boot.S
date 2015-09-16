@@ -23,6 +23,7 @@ stack_top:
 .global _start
 .type _start, @function
 _start:
+	xchg %bx, %bx # Magic breakpoint for bochs
 	movl $stack_top, %esp
 
 	# Initialize the core kernel before running the global constructors.
