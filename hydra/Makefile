@@ -1,5 +1,5 @@
-HOST?=$(shell ../default-host.sh)
-HOSTARCH:=$(shell ../target-triplet-to-arch.sh $(HOST))
+export HOST?=$(shell ../default-host.sh)
+export HOSTARCH:=$(shell ../target-triplet-to-arch.sh $(HOST))
 
 CFLAGS?=-O2 -g
 CPPFLAGS?=
@@ -18,8 +18,10 @@ LDFLAGS:=$(LDFLAGS)
 LIBS:=$(LIBS) -nostdlib -lk -lgcc
 
 ARCHDIR:=arch/$(HOSTARCH)
+KLIBDIR:=klib
 
 include $(ARCHDIR)/make.config
+include $(KLIBDIR)/make.config
 
 CFLAGS:=$(CFLAGS) $(KERNEL_ARCH_CFLAGS)
 CPFLAGS:=$(CPPFLAGS) $(KERNEL_ARCH_CPPFLAGS)
@@ -51,7 +53,7 @@ all: myos.kernel
 
 .PHONY: all clean install install-headers install-kernel
 
-myos.kernel: $(OBJ_LINK_LIST) $(ARCHDIR)/linker.ld
+myos.kernel: $(KLIB) $(OBJ_LINK_LIST) $(ARCHDIR)/linker.ld
 	$(CC) -T $(ARCHDIR)/linker.ld -o $@ $(CFLAGS) $(OBJ_LINK_LIST) $(LDFLAGS) $(LIBS)
 
 %.o: %.c
@@ -65,7 +67,7 @@ clean:
 
 install: install-headers install-kernel
 
-install-headers:
+install-headers: install-klib-headers
 	mkdir -p $(DESTDIR)$(INCLUDEDIR)
 	cp -RTv include $(DESTDIR)$(INCLUDEDIR)
 
