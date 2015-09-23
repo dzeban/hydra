@@ -1,10 +1,8 @@
 export HOST?=$(shell ../default-host.sh)
 export HOSTARCH:=$(shell ../target-triplet-to-arch.sh $(HOST))
 
-CFLAGS?=-O2 -g
-CPPFLAGS?=
-LDFLAGS?=
-LIBS?=
+ARCHDIR:=arch/$(HOSTARCH)
+LIBKDIR:=libk
 
 DESTDIR?=
 PREFIX?=/usr/local
@@ -12,19 +10,18 @@ EXEC_PREFIX?=$(PREFIX)
 BOOTDIR?=$(EXEC_PREFIX)/boot
 INCLUDEDIR?=$(PREFIX)/include
 
-CFLAGS:=$(CFLAGS) -ffreestanding -fbuiltin -Wall -Wextra
-CPPFLAGS:=$(CPPFLAGS) -D__is_myos_kernel -Iinclude
-LDFLAGS:=$(LDFLAGS)
-LIBS:=$(LIBS) -nostdlib -lk -lgcc
-
-ARCHDIR:=arch/$(HOSTARCH)
-KLIBDIR:=klib
-
 include $(ARCHDIR)/make.config
-include $(KLIBDIR)/make.config
+include $(LIBKDIR)/make.config
+
+CFLAGS?=-O2 -g
+LDFLAGS?=
+LIBS?=
+
+CFLAGS:=$(CFLAGS) -Iinclude -ffreestanding -fbuiltin -Wall -Wextra
+LDFLAGS:=$(LDFLAGS)
+LIBS:=$(LIBS) -nostdlib -lgcc
 
 CFLAGS:=$(CFLAGS) $(KERNEL_ARCH_CFLAGS)
-CPFLAGS:=$(CPPFLAGS) $(KERNEL_ARCH_CPPFLAGS)
 LDFLAGS:=$(LDFLAGS) $(KERNEL_ARCH_LDFLAGS)
 LIBS:=$(LIBS) $(KERNEL_ARCH_LIBS)
 
@@ -49,25 +46,35 @@ $(OBJS) \
 $(CRTEND_OBJ) \
 $(CRTN_OBJ) \
 
+LIBK_LINK_OBJS:=$(addprefix libk/, $(LIBK_OBJS))
+
 all: myos.kernel
 
-.PHONY: all clean install install-headers install-kernel
+.PHONY: all clean install install-headers install-kernel libk
 
-myos.kernel: $(KLIB) $(OBJ_LINK_LIST) $(ARCHDIR)/linker.ld
-	$(CC) -T $(ARCHDIR)/linker.ld -o $@ $(CFLAGS) $(OBJ_LINK_LIST) $(LDFLAGS) $(LIBS)
+myos.kernel: install-headers libk libk-headers $(OBJ_LINK_LIST) $(ARCHDIR)/linker.ld
+	$(CC) -T $(ARCHDIR)/linker.ld -o $@ $(CFLAGS) $(LIBS) $(LIBK_LINK_OBJS) $(OBJ_LINK_LIST) $(LDFLAGS)
+
+libk:
+	$(MAKE) -C $(LIBKDIR)
+
+libk-headers:
+	$(MAKE) -C $(LIBKDIR) install-headers
 
 %.o: %.c
-	$(CC) -c $< -o $@ -std=gnu11 $(CFLAGS) $(CPPFLAGS)
+	$(CC) -c $< -o $@ -std=gnu11 $(CFLAGS)
 
 %.o: %.S
-	$(CC) -c $< -o $@ $(CFLAGS) $(CPPFLAGS)
+	$(CC) -c $< -o $@ $(CFLAGS)
 
 clean:
 	rm -f myos.kernel $(OBJS) $(ALL_OUR_OBJS) *.o */*.o */*/*.o
+	$(MAKE) -C $(LIBKDIR) clean
+	rm -rf sysroot
 
 install: install-headers install-kernel
 
-install-headers: install-klib-headers
+install-headers: libk-headers
 	mkdir -p $(DESTDIR)$(INCLUDEDIR)
 	cp -RTv include $(DESTDIR)$(INCLUDEDIR)
 
