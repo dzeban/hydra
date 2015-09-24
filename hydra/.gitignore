@@ -1,2 +1,4 @@
 *.o
-*.kernel
+
+# Ignore kernel image
+hydra.k

@@ -48,11 +48,11 @@ $(CRTN_OBJ) \
 
 LIBK_LINK_OBJS:=$(addprefix libk/, $(LIBK_OBJS))
 
-all: myos.kernel
+all: hydra.k
 
 .PHONY: all clean install install-headers install-kernel libk
 
-myos.kernel: install-headers libk libk-headers $(OBJ_LINK_LIST) $(ARCHDIR)/linker.ld
+hydra.k: install-headers libk libk-headers $(OBJ_LINK_LIST) $(ARCHDIR)/linker.ld
 	$(CC) -T $(ARCHDIR)/linker.ld -o $@ $(CFLAGS) $(LIBS) $(LIBK_LINK_OBJS) $(OBJ_LINK_LIST) $(LDFLAGS)
 
 libk:
@@ -68,7 +68,7 @@ libk-headers:
 	$(CC) -c $< -o $@ $(CFLAGS)
 
 clean:
-	rm -f myos.kernel $(OBJS) $(ALL_OUR_OBJS) *.o */*.o */*/*.o
+	rm -f hydra.k $(OBJS) $(ALL_OUR_OBJS) *.o */*.o */*/*.o
 	$(MAKE) -C $(LIBKDIR) clean
 	rm -rf sysroot
 
@@ -78,6 +78,6 @@ install-headers: libk-headers
 	mkdir -p $(DESTDIR)$(INCLUDEDIR)
 	cp -RTv include $(DESTDIR)$(INCLUDEDIR)
 
-install-kernel: myos.kernel
+install-kernel: hydra.k
 	mkdir -p $(DESTDIR)$(BOOTDIR)
-	cp myos.kernel $(DESTDIR)$(BOOTDIR)
+	cp hydra.k $(DESTDIR)$(BOOTDIR)
