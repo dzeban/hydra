@@ -2,5 +2,7 @@
 isodir
 sysroot
 
+bochslog.txt
+
 hydra.k
 *.o

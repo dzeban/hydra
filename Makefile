@@ -92,3 +92,5 @@ iso: hydra.k
 qemu: iso
 	qemu-system-$(HOSTARCH) -cdrom $(ISO)
 
+bochs: iso
+	bochs -f util/bochsrc.txt -q
