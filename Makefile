@@ -45,6 +45,8 @@ $(CRTN_OBJ) \
 
 LIBK_LINK_OBJS:=$(addprefix libk/, $(LIBK_OBJS))
 
+ISO:=hydra.iso
+
 all: hydra.k
 
 .PHONY: all clean install install-headers install-kernel libk
@@ -78,3 +80,14 @@ install-headers: libk-headers
 install-kernel: hydra.k
 	mkdir -p $(DESTDIR)$(BOOTDIR)
 	cp hydra.k $(DESTDIR)$(BOOTDIR)
+
+# Utility targets
+iso: hydra.k
+	mkdir -p isodir/boot/grub
+	cp $^ isodir/boot/
+	cp util/grub.cfg isodir/boot/grub/
+	grub2-mkrescue -o $(ISO) isodir
+
+qemu: iso
+	qemu-system-$(HOSTARCH) -cdrom $(ISO)
+
