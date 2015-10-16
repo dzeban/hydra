@@ -67,9 +67,10 @@ libk-headers:
 	$(CC) -c $< -o $@ $(CFLAGS)
 
 clean:
-	rm -f hydra.k $(OBJS) $(ALL_OUR_OBJS) *.o */*.o */*/*.o
+	rm -f hydra.k $(ISO) $(OBJS) $(ALL_OUR_OBJS) *.o */*.o */*/*.o
 	$(MAKE) -C $(LIBKDIR) clean
 	rm -rf sysroot
+	rm -rf isodir
 
 install: install-headers install-kernel
 
