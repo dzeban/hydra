@@ -1,6 +1,3 @@
-export HOST?=$(shell ../default-host.sh)
-export HOSTARCH:=$(shell ../target-triplet-to-arch.sh $(HOST))
-
 ARCHDIR:=arch/$(HOSTARCH)
 LIBKDIR:=libk
 

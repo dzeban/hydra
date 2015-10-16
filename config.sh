@@ -1,5 +1,6 @@
 export MAKE=${MAKE:-make}
 export HOST=${HOST:-i686-elf}
+export HOSTARCH=${HOSTARCH:-i386}
 
 export AR=${HOST}-ar
 export AS=${HOST}-as
