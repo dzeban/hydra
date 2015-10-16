@@ -1,15 +1,9 @@
 "Hydra" -- research operating system
 ====================================
 
-config.sh  - export env variables for later use of other scripts
-headers.sh - install headers in sysroot/include
-build.sh   - build each project (kernel and libc)
-clean.sh   - clean each project (kernel and libc) remove binaries and build dirs
+Hydra suppose to be an experimental OS that implements ideas of self-adaptation
+and self-healing on the kernel level. It's really nothing much right now, so
+come back to check it later.
 
-iso.sh     - create iso image with kernel
-qemu.sh    - runs qemu system with iso
-bochs.sh   - runs bochs emulator with iso
-
-default-host.sh - echoes 'i686-elf'
-target-triplet-to-arch.sh - convert "i686-elf" to "i386"
-
+If you know some project like this, feel free to message me at
+<alex.dzyoba@gmail.com>
