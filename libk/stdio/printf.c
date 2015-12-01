@@ -9,6 +9,16 @@ static void print(const char* data, size_t data_length)
 		putchar((int) ((const unsigned char*) data)[i]);
 }
 
+static int number2str(unsigned int n, char *str)
+{
+	while (n)
+	{
+		*str++ = (n % 10) + '0';
+		n /= 10;
+	}
+	return 0;
+}
+
 int printf(const char* restrict format, ...)
 {
 	va_list parameters;
@@ -34,6 +44,11 @@ int printf(const char* restrict format, ...)
 
 		const char* format_begun_at = format;
 
+		/* FIXME: should clear before printing next number into */
+		/* String to convert number types.
+		 * 20 chars is enough to store up to 64 bit types both in hex and dec.  */
+		char number[20];
+
 		if ( *(++format) == '%' )
 			goto print_c;
 
@@ -56,6 +71,22 @@ int printf(const char* restrict format, ...)
 			format++;
 			const char* s = va_arg(parameters, const char*);
 			print(s, strlen(s));
+		}
+		else if ( *format == 'd' )
+		{
+			format++;
+			int d = (int) va_arg(parameters, int);
+			if (number2str(d, number))
+				return -1;
+			print(number, strlen(number));
+		}
+		else if ( *format == 'u' )
+		{
+			format++;
+			unsigned int u = (unsigned int) va_arg(parameters, unsigned int);
+			if (number2str(u, number))
+				return -1;
+			print(number, strlen(number));
 		}
 		else
 		{
