@@ -19,11 +19,26 @@ stack_bottom:
 stack_top:
 
 # The kernel entry point.
+# The linker script specifies _start as the entry point to the kernel and the
+# bootloader will jump to this position once the kernel has been loaded. It
+# doesn't make sense to return from this function as the bootloader is gone.
+#
+# IMPORTANT: Multiboot comliant bootloader sets machine state to protected mode,
+# as per specification, section 3.2 "Machine state":
+# > ‘CR0’
+# >    Bit 31 (PG) must be cleared. Bit 0 (PE) must be set. Other bits are all
+# >    undefined. 
+#
 .section .text
 .global _start
 .type _start, @function
 _start:
+	# Disable interrupts, until we setup IDT
+	cli
+
 	xchg %bx, %bx # Magic breakpoint for bochs
+
+	# Setup kernel stack
 	movl $stack_top, %esp
 
 	# Initialize the core kernel before running the global constructors.
@@ -34,9 +49,8 @@ _start:
 
 	# Transfer control to the main kernel.
 	call kernel_main
-
-	# Hang if kernel_main unexpectedly returns.
-	cli
+	
+# Hang if kernel_main unexpectedly returns.
 .Lhang:
 	hlt
 	jmp .Lhang
