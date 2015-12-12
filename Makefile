@@ -89,6 +89,13 @@ iso: hydra.k
 	cp util/grub.cfg isodir/boot/grub/
 	grub2-mkrescue -o $(ISO) isodir
 
+geniso: hydra.k
+	mkdir -p isodir/boot/grub
+	cp $^ isodir/boot/
+	cp util/menu.lst isodir/boot/grub/
+	cp util/stage2_eltorito isodir/boot/grub
+	genisoimage -R -b boot/grub/stage2_eltorito -no-emul-boot -boot-load-size 4 -A os -input-charset utf8 -boot-info-table -o $(ISO) isodir
+
 qemu: iso
 	qemu-system-$(HOSTARCH) -cdrom $(ISO)
 
