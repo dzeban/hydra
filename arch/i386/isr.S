@@ -40,6 +40,8 @@ isr_common_stub:
 .global isr\n
 isr\n:
 	cli
+	# When no error code provided we explicitly push 0 to unify ISR stacks of
+	# ISR_NOERRCODE and ISR_ERRCODE
 	pushl $0
 	pushl $\n
 	jmp isr_common_stub
@@ -49,6 +51,7 @@ isr\n:
 .global isr\n
 isr\n:
 	cli
+	# Error code already pushed before interrupt vector number
 	pushl \n
 	jmp isr_common_stub
 .endm
