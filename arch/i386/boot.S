@@ -36,8 +36,6 @@ _start:
 	# Disable interrupts, until we setup IDT
 	cli
 
-	xchg %bx, %bx # Magic breakpoint for bochs
-
 	# Setup kernel stack
 	movl $stack_top, %esp
 
