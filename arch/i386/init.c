@@ -7,6 +7,5 @@
 void arch_initialize(void)
 {
 	gdt_init();
-	__BREAK_BOCHS();
 	interrupts_init();
 }
