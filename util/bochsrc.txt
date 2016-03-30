@@ -1,7 +1,7 @@
 megs:            32
 display_library: sdl2, options="gui_debug"
-romimage:        file=/opt/share/bochs/BIOS-bochs-latest
-vgaromimage:     file=/opt/share/bochs/VGABIOS-lgpl-latest
+romimage:        file=/usr/local/share/bochs/BIOS-bochs-latest
+vgaromimage:     file=/usr/local/share/bochs/VGABIOS-lgpl-latest
 ata0-master:     type=cdrom, path=hydra.iso, status=inserted
 boot:            cdrom
 log:             bochslog.txt
