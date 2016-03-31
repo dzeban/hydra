@@ -19,6 +19,9 @@ isr_common_stub:
 	movw %ax, %fs
 	movw %ax, %gs
 
+    # Push regs argument for isr_handler
+    pushl %esp
+
 	call isr_handler
 
 	popl %eax
