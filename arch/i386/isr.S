@@ -21,8 +21,8 @@ isr_common_stub:
 
     # Push regs argument for isr_handler
     pushl %esp
-
 	call isr_handler
+    addl $4, %esp
 
 	popl %eax
 
