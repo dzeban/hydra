@@ -25,7 +25,8 @@ struct regs
 	uint32_t ds;
 	uint32_t edi, esi, ebp, esp, ebx, edx, ecx, eax; //Pushed by pusha
 	uint32_t irqn, err; // Pushed by assembler before isr_common_stub
-	uint32_t eip, cs, eflags, useresp, ss; // Pushed by CPU on interrupt
+	uint32_t eip, cs, eflags; // Pushed by CPU on interrupt
+	//uint32_t useresp, ss; // Pushed by CPU on interrupt when switching contexts
 } __attribute__((packed));
 
 // ASM functions

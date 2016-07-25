@@ -6,32 +6,65 @@ kbd_isr:
 .extern isr_handler
 
 isr_common_stub:
+	# Save general-purpose registers in order:
+	# EAX, ECX, EDX, EBX, ESP, EBP, ESI, EDI.
 	pusha
 
 	# Save data segment descriptor
-	movw %ds, %ax 
+	movw %ds, %ax
 	pushl %eax
 
-	# load kernel segment descriptor
-	movw $0x10, %ax 
+	# Reload segment registers with kernel code and data descriptors
+	#
+	# Load kernel data segment descriptor,
+	# which is the second one (*8 for byte offset in GDT)
+	movw $(0x2 * 8), %ax
 	movw %ax, %ds
 	movw %ax, %es
+	# Load kernel code segment descriptor,
+	# which is the first one
+	movw $(0x1 * 8), %ax
 	movw %ax, %fs
 	movw %ax, %gs
 
+	# Right now stack contains:
+	#
+	# [ss]      -- Saved by CPU only when stack switch occurs,
+	# [useresp] -- e.g. interrupted in userspace
+	# eflags --+
+	# cs       |-- saved implicitly by CPU when interrupt occurs
+	# eip    --+
+	# errcode
+	# irqn
+	# eax  --+
+	# ecx    |
+	# edx    |
+	# ebx    |
+	# esp    |-- saved by pusha
+	# ebp    |
+	# esi    |
+	# edi  --+
+	# ds
+	#
+	# This is struct regs constructed on stack.
+	# We pass it to isr_handler by pushing esp
+	pushl %esp
 	call isr_handler
-
-	popl %eax
+	addl $4, %esp # Clean passed struct regs
 
 	# Reload original data segment descriptor
+	popl %eax
 	movw %ax, %ds 
 	movw %ax, %es
 	movw %ax, %fs
 	movw %ax, %gs
 
-	# Clean up pushed error code
 	popa
+	# Clean up pushed error code
+	# and irq number
 	add $8, %esp 
+
+	# Enable interrupts and return
 	sti
 	iret
 
@@ -88,5 +121,4 @@ ISR_NOERRCODE 28
 ISR_NOERRCODE 29
 ISR_NOERRCODE 30
 ISR_NOERRCODE 31
-
 
