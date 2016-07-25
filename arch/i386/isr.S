@@ -3,7 +3,7 @@ kbd_isr:
 	call kbd_isr_main
 	iret
 
-.extern isr_handler
+.extern isr_dispatch
 
 isr_common_stub:
 	# Save general-purpose registers in order:
@@ -49,7 +49,7 @@ isr_common_stub:
 	# This is struct regs constructed on stack.
 	# We pass it to isr_handler by pushing esp
 	pushl %esp
-	call isr_handler
+	call isr_dispatch
 	addl $4, %esp # Clean passed struct regs
 
 	# Reload original data segment descriptor
@@ -121,4 +121,6 @@ ISR_NOERRCODE 28
 ISR_NOERRCODE 29
 ISR_NOERRCODE 30
 ISR_NOERRCODE 31
+
+ISR_NOERRCODE 33
 

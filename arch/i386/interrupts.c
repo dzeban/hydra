@@ -27,6 +27,7 @@ void idt_init(void)
 
 	memset(IDT, 0, sizeof(IDT));
 
+	// CPU exception IDT entries
 	idt_set_gate(0, (uint32_t)isr0, 0x08, 0x8E);
 	idt_set_gate(1, (uint32_t)isr1, 0x08, 0x8E);
 	idt_set_gate(2, (uint32_t)isr2, 0x08, 0x8E);
@@ -60,29 +61,78 @@ void idt_init(void)
 	idt_set_gate(30, (uint32_t)isr30, 0x08, 0x8E);
 	idt_set_gate(31, (uint32_t)isr31, 0x08, 0x8E);
 
+	// Keyboard IDT entry
+	idt_set_gate(0x21, (uint32_t)isr33, 0x08, 0x8E);
+
 	idt_ptr.base = (uint32_t)&IDT;
 	idt_ptr.limit = sizeof(IDT) - 1;
 	idt_flush((uint32_t)&idt_ptr);
+}
+
+/**
+ * Initialize 8259A PIC
+ *
+ * In order to setup interrupts, PIC must be configured.
+ * Basically, what we need is reset it and set vector offset.
+ *
+ * [vector_offset]
+ *
+ * Vector offset is PIC internal value that is added to IRQ to produce interrupt
+ * vector which is sent to CPU. Initial (after reset) vector offset is 8, so IRQ1
+ * (keyboard) is sent as INT9 (IRQ1+8=INT9) to CPU.
+ *
+ * But because x86 CPU reserves first 32 (0x20) interrupt vectors for its own
+ * exceptions (divide-by-zero, page fault, etc.) we have to remap hardware
+ * interrupts by setting vector offset to 0x20.
+ */
+void pic_init()
+{
+	// ICW1. Start initialization
+	outb(PIC1_CMD, 0x11);
+	outb(PIC2_CMD, 0x11);
+
+	// Now PICs wait for 3 extra initialization words (ICWs)
+
+	// ICW2: Set vector offsets
+	outb(PIC1_DATA, 0x20); // PIC1 now starts at 32
+	outb(PIC2_DATA, 0x28); // PIC2 now starts at 40
+
+	// ICW3: Setup PIC cascading
+	outb(PIC1_DATA, 0x04);
+	outb(PIC2_DATA, 0x02);
+
+	// ICW4: Set mode 8086
+	outb(PIC1_DATA, 0x01);
+	outb(PIC2_DATA, 0x01);
 }
 
 void interrupts_init(void)
 {
 	idt_init();
 
+	pic_init();
+
 	/* 0xfd = 11111101 - Enable only IRQ1 (kbd) */
-	outb(0x21, 0xfd);
+	outb(PIC1_DATA, 0xfd);
 
 	/* Enable interrupts */
 	asm volatile ("sti");
 }
 
-/*void isr_handler(struct regs *r)*/
-void isr_handler(struct regs *r)
+void isr_dispatch(struct regs *r)
 {
-	kbd_isr_main();
+	int irqn = (int)r->irqn;
+	printf("INT%d\n", irqn);
 
-	/*
-	 *int irqn = (int)r->irqn;
-	 *printf("Interrupt %d\n", irqn);
-	 */
+	// write EOI
+	outb(PIC1_CMD, 0x20);
+
+	switch (irqn) {
+		case 0x21:
+			kbd_isr_main();
+			break;
+		default:
+			printf("Unknown interrupt %d\n", irqn);
+			break;
+	}
 }

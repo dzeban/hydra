@@ -46,9 +46,6 @@ void kbd_isr_main(void)
 	uint8_t status;
 	char keycode;
 
-	// write EOI
-	outb(0x20, 0x20);
-
 #define KBD_STATUS_PORT 0x64
 	status = inb(KBD_STATUS_PORT);
 	
