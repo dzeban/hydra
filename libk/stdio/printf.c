@@ -3,125 +3,322 @@
 #include <stdio.h>
 #include <string.h>
 
-static void print(const char* data, size_t data_length)
+#include <kernel/tty.h>
+
+static inline int isdigit(int ch)
 {
-	for ( size_t i = 0; i < data_length; i++ )
-		putchar((int) ((const unsigned char*) data)[i]);
+	return (ch >= '0') && (ch <= '9');
 }
 
-static int number2str(unsigned int n, char *str)
+static inline int isxdigit(int ch)
 {
-	while (n)
-	{
-		*str++ = (n % 10) + '0';
-		n /= 10;
+	if (isdigit(ch))
+		return true;
+
+	if ((ch >= 'a') && (ch <= 'f'))
+		return true;
+
+	return (ch >= 'A') && (ch <= 'F');
+}
+
+size_t strnlen(const char *s, size_t maxlen)
+{
+	const char *es = s;
+	while (*es && maxlen) {
+		es++;
+		maxlen--;
 	}
-	return 0;
+
+	return (es - s);
 }
 
-static int number2hex(unsigned int n, char *str)
+static int skip_atoi(const char **s)
 {
-    int c;
+	int i = 0;
 
-	while (n) {
-        c = (n % 16);
+	while (isdigit(**s))
+		i = i * 10 + *((*s)++) - '0';
+	return i;
+}
 
-        if (c >= 10) {
-            c += 'A' - 10;
-        } else {
-            c += '0';
-        }
+#define ZEROPAD	1		/* pad with zero */
+#define SIGN	2		/* unsigned/signed long */
+#define PLUS	4		/* show plus */
+#define SPACE	8		/* space if plus */
+#define LEFT	16		/* left justified */
+#define SMALL	32		/* Must be 32 == 0x20 */
+#define SPECIAL	64		/* 0x */
 
-		*str++ = c;
-		n /= 16;
+#define __do_div(n, base) ({ \
+int __res; \
+__res = ((unsigned long) n) % (unsigned) base; \
+n = ((unsigned long) n) / (unsigned) base; \
+__res; })
+
+static char *number(char *str, long num, int base, int size, int precision,
+		    int type)
+{
+	/* we are called with base 8, 10 or 16, only, thus don't need "G..."  */
+	static const char digits[16] = "0123456789ABCDEF"; /* "GHIJKLMNOPQRSTUVWXYZ"; */
+
+	char tmp[66];
+	char c, sign, locase;
+	int i;
+
+	/* locase = 0 or 0x20. ORing digits or letters with 'locase'
+	 * produces same digits or (maybe lowercased) letters */
+	locase = (type & SMALL);
+	if (type & LEFT)
+		type &= ~ZEROPAD;
+	if (base < 2 || base > 16)
+		return NULL;
+	c = (type & ZEROPAD) ? '0' : ' ';
+	sign = 0;
+	if (type & SIGN) {
+		if (num < 0) {
+			sign = '-';
+			num = -num;
+			size--;
+		} else if (type & PLUS) {
+			sign = '+';
+			size--;
+		} else if (type & SPACE) {
+			sign = ' ';
+			size--;
+		}
 	}
-	return 0;
+	if (type & SPECIAL) {
+		if (base == 16)
+			size -= 2;
+		else if (base == 8)
+			size--;
+	}
+	i = 0;
+	if (num == 0)
+		tmp[i++] = '0';
+	else
+		while (num != 0)
+			tmp[i++] = (digits[__do_div(num, base)] | locase);
+	if (i > precision)
+		precision = i;
+	size -= precision;
+	if (!(type & (ZEROPAD + LEFT)))
+		while (size-- > 0)
+			*str++ = ' ';
+	if (sign)
+		*str++ = sign;
+	if (type & SPECIAL) {
+		if (base == 8)
+			*str++ = '0';
+		else if (base == 16) {
+			*str++ = '0';
+			*str++ = ('X' | locase);
+		}
+	}
+	if (!(type & LEFT))
+		while (size-- > 0)
+			*str++ = c;
+	while (i < precision--)
+		*str++ = '0';
+	while (i-- > 0)
+		*str++ = tmp[i];
+	while (size-- > 0)
+		*str++ = ' ';
+	return str;
 }
 
-int printf(const char* restrict format, ...)
+int vsprintf(char *buf, const char *fmt, va_list args)
 {
-	va_list parameters;
-	va_start(parameters, format);
+	int len;
+	unsigned long num;
+	int i, base;
+	char *str;
+	const char *s;
 
-	int written = 0;
-	size_t amount;
-	bool rejected_bad_specifier = false;
+	int flags;		/* flags to number() */
 
-	while ( *format != '\0' )
-	{
-		if ( *format != '%' )
-		{
-		print_c:
-			amount = 1;
-			while ( format[amount] && format[amount] != '%' )
-				amount++;
-			print(format, amount);
-			format += amount;
-			written += amount;
+	int field_width;	/* width of output field */
+	int precision;		/* min. # of digits for integers; max
+				   number of chars for from string */
+	int qualifier;		/* 'h', 'l', or 'L' for integer fields */
+
+	for (str = buf; *fmt; ++fmt) {
+		if (*fmt != '%') {
+			*str++ = *fmt;
 			continue;
 		}
 
-		const char* format_begun_at = format;
-
-		/* FIXME: should clear before printing next number into */
-		/* String to convert number types.
-		 * 20 chars is enough to store up to 64 bit types both in hex and dec.  */
-		char number[20];
-
-		if ( *(++format) == '%' )
-			goto print_c;
-
-		if ( rejected_bad_specifier )
-		{
-		incomprehensible_conversion:
-			rejected_bad_specifier = true;
-			format = format_begun_at;
-			goto print_c;
+		/* process flags */
+		flags = 0;
+	      repeat:
+		++fmt;		/* this also skips first '%' */
+		switch (*fmt) {
+		case '-':
+			flags |= LEFT;
+			goto repeat;
+		case '+':
+			flags |= PLUS;
+			goto repeat;
+		case ' ':
+			flags |= SPACE;
+			goto repeat;
+		case '#':
+			flags |= SPECIAL;
+			goto repeat;
+		case '0':
+			flags |= ZEROPAD;
+			goto repeat;
 		}
 
-		if ( *format == 'c' )
-		{
-			format++;
-			char c = (char) va_arg(parameters, int /* char promotes to int */);
-			print(&c, sizeof(c));
+		/* get field width */
+		field_width = -1;
+		if (isdigit(*fmt))
+			field_width = skip_atoi(&fmt);
+		else if (*fmt == '*') {
+			++fmt;
+			/* it's the next argument */
+			field_width = va_arg(args, int);
+			if (field_width < 0) {
+				field_width = -field_width;
+				flags |= LEFT;
+			}
 		}
-		else if ( *format == 's' )
-		{
-			format++;
-			const char* s = va_arg(parameters, const char*);
-			print(s, strlen(s));
+
+		/* get the precision */
+		precision = -1;
+		if (*fmt == '.') {
+			++fmt;
+			if (isdigit(*fmt))
+				precision = skip_atoi(&fmt);
+			else if (*fmt == '*') {
+				++fmt;
+				/* it's the next argument */
+				precision = va_arg(args, int);
+			}
+			if (precision < 0)
+				precision = 0;
 		}
-		else if ( *format == 'd' )
-		{
-			format++;
-			int d = (int) va_arg(parameters, int);
-			if (number2str(d, number))
-				return -1;
-			print(number, strlen(number));
+
+		/* get the conversion qualifier */
+		qualifier = -1;
+		if (*fmt == 'h' || *fmt == 'l' || *fmt == 'L') {
+			qualifier = *fmt;
+			++fmt;
 		}
-		else if ( *format == 'u' )
-		{
-			format++;
-			unsigned int u = (unsigned int) va_arg(parameters, unsigned int);
-			if (number2str(u, number))
-				return -1;
-			print(number, strlen(number));
+
+		/* default base */
+		base = 10;
+
+		switch (*fmt) {
+		case 'c':
+			if (!(flags & LEFT))
+				while (--field_width > 0)
+					*str++ = ' ';
+			*str++ = (unsigned char)va_arg(args, int);
+			while (--field_width > 0)
+				*str++ = ' ';
+			continue;
+
+		case 's':
+			s = va_arg(args, char *);
+			len = strnlen(s, precision);
+
+			if (!(flags & LEFT))
+				while (len < field_width--)
+					*str++ = ' ';
+			for (i = 0; i < len; ++i)
+				*str++ = *s++;
+			while (len < field_width--)
+				*str++ = ' ';
+			continue;
+
+		case 'p':
+			if (field_width == -1) {
+				field_width = 2 * sizeof(void *);
+				flags |= ZEROPAD;
+			}
+			str = number(str,
+				     (unsigned long)va_arg(args, void *), 16,
+				     field_width, precision, flags);
+			continue;
+
+		case 'n':
+			if (qualifier == 'l') {
+				long *ip = va_arg(args, long *);
+				*ip = (str - buf);
+			} else {
+				int *ip = va_arg(args, int *);
+				*ip = (str - buf);
+			}
+			continue;
+
+		case '%':
+			*str++ = '%';
+			continue;
+
+			/* integer number formats - set up the flags and "break" */
+		case 'o':
+			base = 8;
+			break;
+
+		case 'x':
+			flags |= SMALL;
+		case 'X':
+			base = 16;
+			break;
+
+		case 'd':
+		case 'i':
+			flags |= SIGN;
+		case 'u':
+			break;
+
+		default:
+			*str++ = '%';
+			if (*fmt)
+				*str++ = *fmt;
+			else
+				--fmt;
+			continue;
 		}
-        else if (*format == 'x') 
-        {
-            format++;
-            unsigned int u = (unsigned int)va_arg(parameters, unsigned int);
-            if (number2hex(u, number))
-                return -1;
-            print(number, strlen(number));
-        }
+		if (qualifier == 'l')
+			num = va_arg(args, unsigned long);
+		else if (qualifier == 'h') {
+			num = (unsigned short)va_arg(args, int);
+			if (flags & SIGN)
+				num = (short)num;
+		} else if (flags & SIGN)
+			num = va_arg(args, int);
 		else
-		{
-			goto incomprehensible_conversion;
-		}
+			num = va_arg(args, unsigned int);
+		str = number(str, num, base, field_width, precision, flags);
 	}
+	*str = '\0';
+	return str - buf;
+}
 
-	va_end(parameters);
+int sprintf(char *buf, const char *fmt, ...)
+{
+	va_list args;
+	int i;
 
-	return written;
+	va_start(args, fmt);
+	i = vsprintf(buf, fmt, args);
+	va_end(args);
+	return i;
+}
+
+int printf(const char *fmt, ...)
+{
+	char printf_buf[1024];
+	va_list args;
+	int printed;
+
+	va_start(args, fmt);
+	printed = vsprintf(printf_buf, fmt, args);
+	va_end(args);
+
+	terminal_writestring(printf_buf);
+
+	return printed;
 }
