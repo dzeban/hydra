@@ -19,6 +19,25 @@ static int number2str(unsigned int n, char *str)
 	return 0;
 }
 
+static int number2hex(unsigned int n, char *str)
+{
+    int c;
+
+	while (n) {
+        c = (n % 16);
+
+        if (c >= 10) {
+            c += 'A' - 10;
+        } else {
+            c += '0';
+        }
+
+		*str++ = c;
+		n /= 16;
+	}
+	return 0;
+}
+
 int printf(const char* restrict format, ...)
 {
 	va_list parameters;
@@ -88,6 +107,14 @@ int printf(const char* restrict format, ...)
 				return -1;
 			print(number, strlen(number));
 		}
+        else if (*format == 'x') 
+        {
+            format++;
+            unsigned int u = (unsigned int)va_arg(parameters, unsigned int);
+            if (number2hex(u, number))
+                return -1;
+            print(number, strlen(number));
+        }
 		else
 		{
 			goto incomprehensible_conversion;

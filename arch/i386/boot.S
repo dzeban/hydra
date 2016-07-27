@@ -39,6 +39,13 @@ _start:
 	# Setup kernel stack
 	movl $stack_top, %esp
 
+    # Multiboot bootloader set %eax to magic 0X2BADB002 and %ebx to contain the
+    # 32-bit physical address of the multiboot information structure.
+    # We pass it to kernel_early to detect available memory and verify we're
+    # loaded correctly
+    pushl %ebx
+    pushl %eax
+
 	# Initialize the core kernel before running the global constructors.
 	call kernel_early
 
