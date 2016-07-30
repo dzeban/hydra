@@ -62,6 +62,8 @@ void kernel_early(unsigned long magic, unsigned long boot_info_addr)
     }
 
 	arch_initialize();
+
+	printf("Hey!");
 }
 
 void kernel_main(void)

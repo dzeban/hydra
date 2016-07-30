@@ -96,8 +96,8 @@ geniso: hydra.k
 	cp util/stage2_eltorito isodir/boot/grub
 	genisoimage -R -b boot/grub/stage2_eltorito -no-emul-boot -boot-load-size 4 -A os -input-charset utf8 -boot-info-table -o $(ISO) isodir
 
-qemu: iso
-	qemu-system-$(HOSTARCH) -cdrom $(ISO)
+qemu: geniso
+	qemu-system-$(HOSTARCH) -s -cdrom $(ISO)
 
 bochs: iso
 	bochs -f util/bochsrc.txt -q
