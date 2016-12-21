@@ -1,3 +1,5 @@
+#include <arch/i386/mm.h>
+
 .global page_directory_load_cr3
 page_directory_load_cr3:
 	pushl %ebp
@@ -16,7 +18,7 @@ enable_paging:
 	movl %esp, %ebp
 
 	movl %cr0, %ebx
-	or  $0x80000000, %ebx
+	or  $(MM_CR0_PG | MM_CR0_WP), %ebx
 	movl %ebx, %cr0
 
 	movl %ebp, %esp

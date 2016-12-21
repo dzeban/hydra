@@ -35,10 +35,10 @@ int boot_info_parse(unsigned long boot_info_addr)
 
         mmap = (multiboot_mmap_entry_t *)mbi->mmap_addr;
         while ((unsigned long)mmap < mbi->mmap_addr + mbi->mmap_length) {
-            printf("0x%x%x:%x%x:%x\n", 
+            printf("0x%x%x + %x%x(%s)   ",
                     mmap->addr_high, mmap->addr_low,
                     mmap->len_high, mmap->len_low,
-                    mmap->type);
+                    mmap->type == 1 ? "available" : "reserved");
             mmap = (multiboot_mmap_entry_t *)((unsigned long)mmap + mmap->size + sizeof(mmap->size));
         }
     }
