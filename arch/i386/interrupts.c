@@ -122,7 +122,7 @@ void interrupts_init(void)
 void isr_dispatch(struct regs *r)
 {
 	int irqn = (int)r->irqn;
-	printf("INT%d\n", irqn);
+	// printf("INT%d\n", irqn);
 
 	// write EOI
 	outb(PIC1_CMD, 0x20);
