@@ -21,7 +21,7 @@ stack_bottom:
 stack_top:
 
 # can't use linker constant here, so hard-coded "0xc0100000"
-.set KERNEL_VIRTUAL_PAGE, (0xc0100000 >> PAGE_TABLE_SHIFT)
+.set KERNEL_VIRTUAL_PAGE, (0xc0100000 >> PAGE_DIR_SHIFT)
 .set INIT_PDE, (PDE_PRESENT_FLAG | PDE_RW_FLAG | PDE_PAGE_SIZE_FLAG)
 
 .section .data
@@ -32,7 +32,7 @@ init_pagedir:
     .long INIT_PDE
     .fill (KERNEL_VIRTUAL_PAGE - 1), 4, 0
 
-    # Page 768 = (0xc0100000 >> PAGE_TABLE_SHIFT) is also mapped to frame 0.
+    # Page 768 = (0xc0100000 >> PAGE_DIR_SHIFT) is also mapped to frame 0.
     .long INIT_PDE
     .fill (PDE_ENTRIES - KERNEL_VIRTUAL_PAGE - 1), 4, 0
 

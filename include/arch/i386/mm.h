@@ -8,38 +8,62 @@
 
 #define PAGE_SIZE 4096
 #define PAGE_SIZE_SHIFT 12
+#define PAGE_MASK 0xFFF
 
-#define PAGE_TABLE_SHIFT 22
+#define PAGE_TABLE_SIZE 1024
+#define PAGE_TABLE_SHIFT 12
+#define PAGE_TABLE_MASK 0x3FF
 
+#define PAGE_DIR_SIZE 1024
+#define PAGE_DIR_SHIFT 22
+#define PAGE_DIR_MASK 0x3FF
+
+#define PDX(a) ((a >> PAGE_DIR_SHIFT)   & PAGE_DIR_MASK)
+#define PTX(a) ((a >> PAGE_TABLE_SHIFT) & PAGE_TABLE_MASK)
+
+
+// PDE, PTE FLAGS
 #define PDE_PRESENT_FLAG     0x00000001
 #define PDE_NOT_PRESENT_MASK ~(PDE_PRESENT)
+
+#define PTE_PRESENT_FLAG     0x00000001
+#define PTE_NOT_PRESENT_MASK ~(PTE_PRESENT)
 
 #define PDE_RW_FLAG     0x00000002
 #define PDE_RO_MASK     ~(PDE_RW)
 
+#define PTE_RW_FLAG     0x00000002
+#define PTE_RO_MASK     ~(PTE_RW)
+
 #define PDE_USER_FLAG   0x00000004
 #define PDE_SUPERVISOR  ~(PDE_USER)
 
+#define PTE_USER_FLAG   0x00000004
+#define PTE_SUPERVISOR  ~(PTE_USER)
+
 #define PDE_PAGE_SIZE_FLAG 0x00000080
 
-#define PDE_ENTRIES 1024
+#define PTE_ADDR(pte) (pte & ~PAGE_MASK)
 
-// Virtual address to physical address
-#define mm_v2p(a) ((a) - __KERNEL_VA_OFFSET)
+// Virtual address to physical address conversion
+#define mm_v2p(a) ((unsigned long)(a) - KERNEL_VA_OFFSET)
+#define mm_p2v(a) ((a) + KERNEL_VA_OFFSET)
 
 #ifndef __ASSEMBLER__
-uint32_t init_pagedir[PDE_ENTRIES];
+typedef uint32_t pde_t;
+typedef uint32_t pte_t;
 
-extern unsigned long __KERNEL_PA_START;
-extern unsigned long __KERNEL_VA_OFFSET;
-extern unsigned long __KERNEL_VA_START;
-extern unsigned long __KERNEL_VA_END;
-
-
-void mm_init();
+pte_t init_pagedir[PAGE_DIR_SIZE];
 
 extern void page_directory_load_cr3(unsigned long);
 extern void enable_paging();
+
+struct mem_map {
+    unsigned long pa_start;
+    unsigned long va_start;
+    unsigned long va_end;
+    unsigned long flags;
+};
 
 #endif // __ASSEMBLER__
 

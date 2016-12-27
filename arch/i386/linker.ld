@@ -21,16 +21,19 @@ ENTRY(_start)
  * page tables and have just a single page table. It just makes initialization
  * simpler and besides this page table is temporary, it will be destroyed soon.
  */
-__KERNEL_PA_START  = 0x100000;
-__KERNEL_VA_OFFSET = 0xc0000000;
-__KERNEL_VA_START  = __KERNEL_PA_START + __KERNEL_VA_OFFSET;
+KERNEL_PA_START  = 0x100000;
+KERNEL_PA_END    = KERNEL_VA_END - KERNEL_VA_OFFSET;
+KERNEL_PA_SIZE = KERNEL_PA_END - KERNEL_PA_START;
+
+KERNEL_VA_OFFSET = 0xc0000000;
+KERNEL_VA_START  = KERNEL_PA_START + KERNEL_VA_OFFSET;
 
 SECTIONS
 {
-    . = __KERNEL_VA_START;
+    . = KERNEL_VA_START;
 
     /* Start putting section starting at 0x100000 physical address */
-    .text ALIGN(4K) : AT(ADDR(.text) - __KERNEL_VA_OFFSET)
+    .text ALIGN(4K) : AT(ADDR(.text) - KERNEL_VA_OFFSET)
     {
         /**
          * First put the multiboot header, as it is required to be put very early
@@ -42,19 +45,21 @@ SECTIONS
     }
 
     /* Read-only data. */
-    .rodata ALIGN(4K) : AT(ADDR(.rodata) - __KERNEL_VA_OFFSET)
+    .rodata ALIGN(4K) : AT(ADDR(.rodata) - KERNEL_VA_OFFSET)
     {
         *(.rodata)
     }
 
     /* Read-write data (initialized) */
-    .data ALIGN(4K) : AT(ADDR(.data) - __KERNEL_VA_OFFSET)
+    KERNEL_VA_DATA = .;
+    KERNEL_PA_DATA = KERNEL_VA_DATA - KERNEL_VA_OFFSET;
+    .data ALIGN(4K) : AT(ADDR(.data) - KERNEL_VA_OFFSET)
     {
         *(.data)
     }
 
     /* Read-write data (uninitialized) and stack */
-    .bss ALIGN(4K) : AT(ADDR(.bss) - __KERNEL_VA_OFFSET)
+    .bss ALIGN(4K) : AT(ADDR(.bss) - KERNEL_VA_OFFSET)
     {
         *(COMMON)
         *(.bss)
@@ -62,11 +67,11 @@ SECTIONS
     }
 
     /**
-     * Save first free address after kernel sections to __KERNEL_VA_END.
+     * Save first free address after kernel sections to KERNEL_VA_END.
      * We will use it in page frame allocator.  
      */
     . = ALIGN(4K);
-    __KERNEL_VA_END = . ;
+    KERNEL_VA_END = . ;
 
     /* The compiler may produce other sections, put them in the proper place in
        in this file, if you'd like to include them in the final kernel. */

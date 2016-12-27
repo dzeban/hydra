@@ -2,10 +2,13 @@
 
 #include <stdio.h>
 #include <kernel/tty.h>
+#include <kernel/mm.h>
 #include <arch/init.h>
 #include <cpuid.h>
 
 #define CHECK_FLAG(flags,bit)   ((flags) & (1 << (bit)))
+
+unsigned long MM_LAST_PA = 0x0;
 
 int boot_info_parse(unsigned long boot_info_addr)
 {
@@ -35,10 +38,23 @@ int boot_info_parse(unsigned long boot_info_addr)
 
         mmap = (multiboot_mmap_entry_t *)mbi->mmap_addr;
         while ((unsigned long)mmap < mbi->mmap_addr + mbi->mmap_length) {
-            printf("0x%x%x + %x%x(%s)   ",
-                    mmap->addr_high, mmap->addr_low,
-                    mmap->len_high, mmap->len_low,
-                    mmap->type == 1 ? "available" : "reserved");
+
+            unsigned long addr = mmap->addr_high << sizeof(mmap->addr_high) | mmap->addr_low;
+            unsigned long len  = mmap->len_high  << sizeof(mmap->len_high)  | mmap->len_low;
+
+            // Determine where available physical memory ends
+            // We look for RAM segment where the kernel sits
+            // to get the length of this segment from multiboot info.
+            // Available physical memory is the range from where kernel ends in RAM
+            // (KERNEL_PA_END in linker.ld) to the end of RAM segment where
+            // kernel resides.
+            if (addr == ADDR(KERNEL_PA_START)) {
+                MM_LAST_PA = addr + len;
+                printf("Available RAM range [0x%p - 0x%lx]\n",
+                        &KERNEL_PA_END, MM_LAST_PA);
+                break;
+            }
+
             mmap = (multiboot_mmap_entry_t *)((unsigned long)mmap + mmap->size + sizeof(mmap->size));
         }
     }
@@ -61,6 +77,7 @@ void kernel_early(unsigned long magic, unsigned long boot_info_addr)
         return;
     }
 
+	mm_init();
 	arch_initialize();
 
 	printf("Hey!");

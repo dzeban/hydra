@@ -9,5 +9,4 @@ void arch_initialize(void)
 {
 	gdt_init();
 	interrupts_init();
-	mm_init();
 }
