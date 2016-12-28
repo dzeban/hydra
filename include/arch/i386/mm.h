@@ -4,7 +4,9 @@
 // CR0-CR4 flags
 #define MM_CR0_WP 0x00010000      // Write Protect
 #define MM_CR0_PG 0x80000000      // Paging
+#define MM_CR0_PG_MASK ~(MM_CR0_PG)
 #define MM_CR4_PS 0x00000010      // Page size extension (4MiB pages)
+#define MM_CR4_PS_MASK ~(MM_CR4_PS)
 
 #define PAGE_SIZE 4096
 #define PAGE_SIZE_SHIFT 12
@@ -55,8 +57,9 @@ typedef uint32_t pte_t;
 
 pte_t init_pagedir[PAGE_DIR_SIZE];
 
-extern void page_directory_load_cr3(unsigned long);
+extern void page_directory_load(unsigned long);
 extern void enable_paging();
+extern void cr4_disable_page_size();
 
 struct mem_map {
     unsigned long pa_start;

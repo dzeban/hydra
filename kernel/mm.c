@@ -4,6 +4,7 @@
 #include <string.h>
 
 #include <kernel/mm.h>
+#include <kernel/vga.h>
 
 // TODO: configure build system to use just
 // #include <arch/mm.h>
@@ -140,11 +141,6 @@ pde_t *mm_kernel_pagedir_init()
     return kernel_pagedir;
 }
 
-void mm_switch_pagedir(unsigned long pagedir_pa)
-{
-    asm volatile("movl %0, %%cr3" : : "r" (pagedir_pa));
-}
-
 void mm_init()
 {
     pde_t *kernel_pagedir;
@@ -155,5 +151,6 @@ void mm_init()
 
     // Set up kernel page directory
     kernel_pagedir = mm_kernel_pagedir_init();
-    mm_switch_pagedir((unsigned long)kernel_pagedir);
+    page_directory_load((unsigned long)kernel_pagedir);
+    cr4_disable_page_size();
 }
