@@ -152,5 +152,8 @@ void mm_init()
     // Set up kernel page directory
     kernel_pagedir = mm_kernel_pagedir_init();
     page_directory_load((unsigned long)kernel_pagedir);
+
+    // Disable 4MiB pages only after page directory switch
+    // because otherwise it fails.
     cr4_disable_page_size();
 }
