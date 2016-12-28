@@ -57,7 +57,7 @@ void kbd_isr_main(void)
 		if (keycode < 0)
 			return;
 
-		putchar(kbd_map[keycode]);
+		putchar(kbd_map[(int)keycode]);
 	}
 
 }
