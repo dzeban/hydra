@@ -100,6 +100,9 @@ geniso: hydra.k
 qemu: geniso
 	qemu-system-$(HOSTARCH) -cdrom $(ISO)
 
+qemu2: geniso
+	qemu-system-$(HOSTARCH) -no-reboot -no-shutdown -cdrom $(ISO)
+
 qemu-debug: geniso
 	qemu-system-$(HOSTARCH) -s -S -no-reboot -no-shutdown -cdrom $(ISO)
 

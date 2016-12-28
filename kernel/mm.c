@@ -137,7 +137,7 @@ pde_t *mm_kernel_pagedir_init()
     for (int i = 0; i < kernel_map_size; i++) {
         mm_map_pages_identity(kernel_pagedir, &kernel_map[i]);
     }
-    return 0;
+    return kernel_pagedir;
 }
 
 void mm_switch_pagedir(unsigned long pagedir_pa)
@@ -155,5 +155,5 @@ void mm_init()
 
     // Set up kernel page directory
     kernel_pagedir = mm_kernel_pagedir_init();
-    mm_switch_pagedir(mm_v2p(kernel_pagedir));
+    mm_switch_pagedir((unsigned long)kernel_pagedir);
 }
