@@ -5,25 +5,25 @@
 
 struct segment_descriptor
 {
-	uint16_t limit_low;
-	uint16_t base_low;
-	uint8_t  base_middle;
+    uint16_t limit_low;
+    uint16_t base_low;
+    uint8_t  base_middle;
 
-	// P:1    - Present
-	// DPL:2  - Descriptor Privilege Level (ring)
-	// S:1    - Descriptor type
-	// Type:4 - segment type
-	uint8_t  access;
+    // P:1    - Present
+    // DPL:2  - Descriptor Privilege Level (ring)
+    // S:1    - Descriptor type
+    // Type:4 - segment type
+    uint8_t  access;
 
-	// 4 bits of flags and 4 bits of limit high bits
-	// flags:
-	// 	G   - Granularity
-	// 	D/B - Width (16 or 32 bits)
-	// 	L   - Long (64 bits)
-	// 	AVL - Available for system use
-	uint8_t  flag_limit_high;
+    // 4 bits of flags and 4 bits of limit high bits
+    // flags:
+    //   G   - Granularity
+    //   D/B - Width (16 or 32 bits)
+    //   L   - Long (64 bits)
+    //   AVL - Available for system use
+    uint8_t  flag_limit_high;
 
-	uint8_t  base_high;
+    uint8_t  base_high;
 } __attribute__((packed));
 
 // Segment types (type:4 in access field)
@@ -60,8 +60,8 @@ struct segment_descriptor
 // Pointer to GDT that will be loaded in gdtr
 struct gdt_ptr
 {
-	uint16_t limit;
-	uint32_t base;
+    uint16_t limit;
+    uint32_t base;
 } __attribute__((packed));
 
 void gdt_init(void);

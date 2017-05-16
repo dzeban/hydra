@@ -6,27 +6,27 @@
 /** IDT table entry */
 struct idt_entry
 {
-	uint16_t base_low;
-	uint16_t selector;
-	uint8_t  zero;
-	uint8_t  type_attr;
-	uint16_t base_high;
+    uint16_t base_low;
+    uint16_t selector;
+    uint8_t  zero;
+    uint8_t  type_attr;
+    uint16_t base_high;
 } __attribute__((packed));
 
 /** Pointer type used by `lidt` instuction */
 struct idt_ptr
 {
-	uint16_t limit;
-	uint32_t base;
+    uint16_t limit;
+    uint32_t base;
 } __attribute__((packed));
 
 struct regs
 {
-	uint32_t ds;
-	uint32_t edi, esi, ebp, esp, ebx, edx, ecx, eax; //Pushed by pusha
-	uint32_t irqn, err; // Pushed by assembler before isr_common_stub
-	uint32_t eip, cs, eflags; // Pushed by CPU on interrupt
-	//uint32_t useresp, ss; // Pushed by CPU on interrupt when switching contexts
+    uint32_t ds;
+    uint32_t edi, esi, ebp, esp, ebx, edx, ecx, eax; //Pushed by pusha
+    uint32_t irqn, err; // Pushed by assembler before isr_common_stub
+    uint32_t eip, cs, eflags; // Pushed by CPU on interrupt
+    //uint32_t useresp, ss; // Pushed by CPU on interrupt when switching contexts
 } __attribute__((packed));
 
 // ASM functions

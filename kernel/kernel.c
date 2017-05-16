@@ -48,7 +48,7 @@ int boot_info_parse(unsigned long boot_info_addr)
 
 void kernel_early(unsigned long magic, unsigned long boot_info_addr)
 {
-	terminal_initialize();
+    terminal_initialize();
 
     /* Am I booted by a Multiboot-compliant boot loader? */
     if (magic != MULTIBOOT_BOOTLOADER_MAGIC) {
@@ -61,12 +61,12 @@ void kernel_early(unsigned long magic, unsigned long boot_info_addr)
         return;
     }
 
-	arch_initialize();
+    arch_initialize();
 
-	printf("Hey!");
+    printf("Hey!");
 }
 
 void kernel_main(void)
 {
-	printf("Hello\n");
+    printf("Hello\n");
 }
